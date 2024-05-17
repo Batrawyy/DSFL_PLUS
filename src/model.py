@@ -1,7 +1,41 @@
+
 import torch
 import torch.nn as nn
 import torchvision
+import torch.nn.functional as F
 
+class CustomLargeCNN(nn.Module):
+    """
+    Custom CNN for large 640x640 images and 8 output classes.
+    """
+    def __init__(self, in_channels=3, out_classes=8):
+        super(CustomLargeCNN, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=7, stride=2, padding=3)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=5, stride=2, padding=2)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.conv3 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.conv4 = nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=1)
+        self.bn4 = nn.BatchNorm2d(512)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(in_features=512 * 10 * 10, out_features=1024)  # Adjust the in_features according to the final feature map size
+        self.fc2 = nn.Linear(in_features=1024, out_features=out_classes)
+        
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.pool(x)  # Reduce dimensionality
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+        x = self.pool(x)  # Further reduce dimensionality
+        x = x.view(-1, 512 * 10 * 10)  # Flatten the output for the fully connected layer
+        x = self.dropout(x)  # Apply dropout to reduce overfitting
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
 
 class CNN_MNIST(nn.Module):
     """
