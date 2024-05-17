@@ -78,7 +78,7 @@ def main(args, logger, date_time, writer):
             raise ValueError(f"Invalid task name: {args.task}")
 
     # server handler, client trainer, and pipeline setup
-    state_dict_dir = f"/tmp/{date_time}"
+    state_dict_dir = "/content/drive/MyDrive/12_GP24_Mohamed_Energy-Efficient Video/Dataset/model"
     cuda = torch.cuda.is_available()
     print(f"Setting up for algorithm: {args.algorithm}")
 
