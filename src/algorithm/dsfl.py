@@ -137,7 +137,7 @@ class DSFLSerialClientTrainer(BaseSerialClientTrainer):
         )
         print(f"Training complete for client {self.current_client_id}, Accuracy: {accuracy:.2f}%")
         return accuracy
-        #print(f"Training complete for client {self.current_client_id}, state saved to {state_dict_path}.")
+        print(f"Training complete for client {self.current_client_id}, state saved to {state_dict_path}.")
 
     def predict(self, public_indices: torch.Tensor) -> List[torch.Tensor]:
         self.model.eval()
