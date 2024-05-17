@@ -95,7 +95,9 @@ class DSFLPipeline(BasePipeline):
 
             self.logger.info(f"Round {t:>3}, Cost {cost:.4f} GB")
             self.writer.add_scalar("Cost", cost, t)
-
+            average_accuracy = self.trainer.local_process(broadcast, sampled_clients, t)
+            self.logger.info(f"Round {t:>3}, Average Training Accuracy: {average_accuracy:.2f}%")
+            self.writer.add_scalar("Accuracy/Training", average_accuracy, t)
             # evaluate server
             server_loss, server_acc = self.handler.evaluate(self.test_loader)
             self.logger.info(
