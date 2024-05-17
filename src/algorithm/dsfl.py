@@ -59,7 +59,7 @@ class DSFLSerialClientTrainer(BaseSerialClientTrainer):
                 self.id_to_state_dict_path[id] = os.path.join(
                     self.state_dict_dir, f"{id:03}.pt"
                 )
-            self.train(
+            accuracy = self.train(
                 state_dict_path=self.id_to_state_dict_path[id],
                 global_logits=global_logits,
                 global_indices=global_indices,
