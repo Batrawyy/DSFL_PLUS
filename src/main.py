@@ -239,15 +239,15 @@ if __name__ == "__main__":
         help="Strategy for splitting data into public and private sets.",
     )
     parser.add_argument(
-        "--private_size", type=int, default=80, help="Size of the private dataset."
+        "--private_size", type=int, default=10000, help="Size of the private dataset."
     )
     parser.add_argument(
-        "--public_size", type=int, default=20, help="Size of the public dataset."
+        "--public_size", type=int, default=3906, help="Size of the public dataset."
     )
     parser.add_argument(
         "--public_size_per_round",
         type=int,
-        default=2,
+        default=130,
         help="Size of the public data used per round.",
     )
     # server
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         "--sample_ratio", type=float, default=1.0, help="Sampling ratio for clients."
     )
     parser.add_argument(
-        "--com_round", type=int, default=10, help="Number of communication rounds."
+        "--com_round", type=int, default=30, help="Number of communication rounds."
     )
     parser.add_argument(
         "--temperature",
@@ -265,13 +265,13 @@ if __name__ == "__main__":
     )
     # client
     parser.add_argument(
-        "--total_clients", type=int, default=2, help="Total number of clients."
+        "--total_clients", type=int, default=7, help="Total number of clients."
     )
     parser.add_argument(
-        "--batch_size", type=int, default=100, help="Batch size for local training."
+        "--batch_size", type=int, default=64, help="Batch size for local training."
     )
     parser.add_argument(
-        "--epochs", type=int, default=5, help="Number of epochs for local training."
+        "--epochs", type=int, default=10, help="Number of epochs for local training."
     )
     parser.add_argument(
         "--lr", type=float, default=0.001, help="Learning rate for local training."
@@ -279,13 +279,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--kd_epochs",
         type=int,
-        default=5,
+        default=10,
         help="Number of epochs for Knowledge Distillation.",
     )
     parser.add_argument(
         "--kd_batch_size",
         type=int,
-        default=100,
+        default=64,
         help="Batch size for Knowledge Distillation.",
     )
     parser.add_argument(
@@ -315,7 +315,7 @@ if __name__ == "__main__":
     )
     # others
     parser.add_argument(
-        "--test_batch_size", type=int, default=100, help="Batch size for testing."
+        "--test_batch_size", type=int, default=64, help="Batch size for testing."
     )
     parser.add_argument(
         "--comment", type=str, default="", help="Additional comments or notes."
