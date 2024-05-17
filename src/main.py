@@ -17,17 +17,20 @@ from algorithm import (
     SingleServerHandler,
 )
 from dataset import PartitionedDataset
-from model import CNN_MNIST, CNN_FashionMNIST, ResNet18_CIFAR10, ResNet18_CIFAR100
+from model import CNN_MNIST, CNN_FashionMNIST, ResNet18_CIFAR10, ResNet18_CIFAR100, CustomLargeCNN
 from pipeline import DSFLPipeline, DSFLPlusPipeline, SinglePipeline
 from utils import seed_everything
 
-
 def main(args, logger, date_time, writer):
+    logger.info("Initializing the system...")
     seed_everything(args.seed)
+    print("Seed set for reproducibility.")
 
     # data
-    dataset_root = f"data/{args.task}"
+    dataset_root = '/content/drive/MyDrive/12_GP24_Mohamed_Energy-Efficient Video/Dataset/My Dataset'
     dataset_path = os.path.join(dataset_root, "partitions", date_time)
+    print(f"Dataset path set to {dataset_path}")
+    print(f"Public Size: {args.public_size}, Private Size: {args.private_size}")
     partitioned_dataset = PartitionedDataset(
         root=dataset_root,
         path=dataset_path,
@@ -40,16 +43,25 @@ def main(args, logger, date_time, writer):
         public_size=args.public_size,
         private_size=args.private_size,
     )
-    # test data
+
+    # Test data
     test_loader = partitioned_dataset.get_dataloader(
         type="test", batch_size=args.test_batch_size
     )
-    # data statistics
-    client_stats = partitioned_dataset.get_client_stats()
-    client_stats.to_csv(f"./logs/{date_time}.csv")
+    print("Test data loader setup completed.")
 
-    # model
+    # Data statistics
+    client_stats = partitioned_dataset.get_client_stats()
+    stats_file_path = f"./logs/{date_time}.csv"
+    client_stats.to_csv(stats_file_path)
+    print(f"Client statistics saved to {stats_file_path}")
+
+    # Model
+    print(f"Initializing model for task {args.task}...")
     match args.task:
+        case "custom_dataset":
+            model = CustomLargeCNN()
+            server_model = CustomLargeCNN()
         case "cifar10":
             model = ResNet18_CIFAR10()
             server_model = ResNet18_CIFAR10()
@@ -65,9 +77,11 @@ def main(args, logger, date_time, writer):
         case _:
             raise ValueError(f"Invalid task name: {args.task}")
 
-    # server handler, client trainer and pipeline
+    # server handler, client trainer, and pipeline setup
     state_dict_dir = f"/tmp/{date_time}"
     cuda = torch.cuda.is_available()
+    print(f"Setting up for algorithm: {args.algorithm}")
+
     if args.algorithm == "dsfl":
         handler = DSFLServerHandler(
             model=server_model,
@@ -161,19 +175,20 @@ def main(args, logger, date_time, writer):
         raise ValueError(f"Invalid algorithm name: {args.algorithm}")
 
     standalone_pipeline.main()
-
+    print("Pipeline execution started.")
 
 def clean_up(args, date_time, writer):
-    """Clean up temporary files."""
+    print("Cleaning up resources...")
     writer.flush()
     writer.close()
     state_dict_path = f"/tmp/{date_time}"
     if os.path.exists(state_dict_path):
         shutil.rmtree(state_dict_path)
+    print("Temporary files deleted.")
     dataset_path = f"./data/{args.task}/partitions/{date_time}"
     if os.path.exists(dataset_path):
         shutil.rmtree(dataset_path)
-
+    print("Dataset partitions removed.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -182,6 +197,7 @@ if __name__ == "__main__":
         "--algorithm",
         type=str,
         required=True,
+        default = "dsflplus",
         choices=["dsfl", "dsflplus", "single"],
         help="Federated Learning Algorithm to use.",
     )
@@ -189,14 +205,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--task",
         type=str,
-        default="cifar10",
-        choices=["mnist", "fmnist", "cifar10", "cifar100"],
+        default="custom_dataset",
+        choices=["mnist", "fmnist", "cifar10", "cifar100", "custom_dataset"],
         help="Dataset for the Federated Learning task.",
     )
     parser.add_argument(
         "--partition",
         type=str,
-        default="shards",
+        default="client_inner_dirichlet",
         choices=["shards", "hetero_dir", "client_inner_dirichlet"],
         help="Partition strategy for the dataset.",
     )
@@ -218,20 +234,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "--public_private_split",
         type=str,
-        default="even_class",
+        default="random_sample",
         choices=["even_class", "random_sample"],
         help="Strategy for splitting data into public and private sets.",
     )
     parser.add_argument(
-        "--private_size", type=int, default=40000, help="Size of the private dataset."
+        "--private_size", type=int, default=80, help="Size of the private dataset."
     )
     parser.add_argument(
-        "--public_size", type=int, default=10000, help="Size of the public dataset."
+        "--public_size", type=int, default=20, help="Size of the public dataset."
     )
     parser.add_argument(
         "--public_size_per_round",
         type=int,
-        default=1000,
+        default=2,
         help="Size of the public data used per round.",
     )
     # server
@@ -239,7 +255,7 @@ if __name__ == "__main__":
         "--sample_ratio", type=float, default=1.0, help="Sampling ratio for clients."
     )
     parser.add_argument(
-        "--com_round", type=int, default=500, help="Number of communication rounds."
+        "--com_round", type=int, default=10, help="Number of communication rounds."
     )
     parser.add_argument(
         "--temperature",
@@ -249,7 +265,7 @@ if __name__ == "__main__":
     )
     # client
     parser.add_argument(
-        "--total_clients", type=int, default=100, help="Total number of clients."
+        "--total_clients", type=int, default=2, help="Total number of clients."
     )
     parser.add_argument(
         "--batch_size", type=int, default=100, help="Batch size for local training."
@@ -258,7 +274,7 @@ if __name__ == "__main__":
         "--epochs", type=int, default=5, help="Number of epochs for local training."
     )
     parser.add_argument(
-        "--lr", type=float, default=0.1, help="Learning rate for local training."
+        "--lr", type=float, default=0.001, help="Learning rate for local training."
     )
     parser.add_argument(
         "--kd_epochs",
@@ -275,13 +291,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--kd_lr",
         type=float,
-        default=0.1,
+        default=0.001,
         help="Learning rate for Knowledge Distillation.",
     )
     parser.add_argument(
         "--ood_detection_score",
         type=str,
-        default=None,
+        default="energy",
         choices=[
             "energy",
             "msp",
@@ -299,7 +315,7 @@ if __name__ == "__main__":
     )
     # others
     parser.add_argument(
-        "--test_batch_size", type=int, default=500, help="Batch size for testing."
+        "--test_batch_size", type=int, default=100, help="Batch size for testing."
     )
     parser.add_argument(
         "--comment", type=str, default="", help="Additional comments or notes."
@@ -311,7 +327,7 @@ if __name__ == "__main__":
 
     os.makedirs(f"tmp/{date_time}", exist_ok=True)
 
-    # logging
+    # Setup logging
     os.makedirs("logs", exist_ok=True)
     logger = logging.getLogger()
     file_handler = logging.FileHandler(f"./logs/{date_time}.log")
@@ -327,9 +343,9 @@ if __name__ == "__main__":
         )
     )
     cmd = "git rev-parse --short HEAD"
-    logger.info(
-        f"git commit hash: {subprocess.check_output(cmd.split()).strip().decode('utf-8')}"
-    )
+    # logger.info(
+    #     f"git commit hash: {subprocess.check_output(cmd.split()).strip().decode('utf-8')}"
+    # )
     if torch.cuda.is_available():
         logger.info(f"Running on {os.uname()[1]} ({torch.cuda.get_device_name()})")
 
