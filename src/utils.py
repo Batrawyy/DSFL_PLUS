@@ -65,12 +65,12 @@ class LoadedDataset(Dataset):
         label = self.labels[idx]
         return sample, label
 class CustomDataset(Dataset):
-    def __init__(self, images_dir, labels_dir, transform=None, max_images=100):
+    def __init__(self, images_dir, labels_dir, transform=None):
         self.images_dir = images_dir
         self.labels_dir = labels_dir
         self.transform = transform
         self.image_files = [f for f in os.listdir(images_dir) if f.endswith(('.jpg', '.png', '.jpeg'))]
-        self.image_files = self.image_files[:max_images]  # Limit to 100 images
+        #self.image_files = self.image_files[:max_images]  # Limit to 100 images
         self.labels = []
         for img_file in self.image_files:
             label_file = os.path.splitext(img_file)[0] + '.txt'
